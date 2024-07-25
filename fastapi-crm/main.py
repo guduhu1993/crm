@@ -15,6 +15,7 @@ app = FastAPI()
 @app.post("/register/", response_model=User)
 def register_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], phone: str,
                   db: Session = Depends(get_db)):
+    print(form_data)
     if username_is_exist(form_data.username, db):  # 用户名是否已存在
         raise HTTPException(status_code=400, detail="Username already registered")
     else:
@@ -54,4 +55,4 @@ def activate_username(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

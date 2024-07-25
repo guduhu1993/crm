@@ -28,16 +28,16 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt, expire.strftime("%Y%m%d%H%M%S")
 
 
 def make_token_for_login(user: Annotated[OAuth2PasswordRequestForm, Depends()]):
     print(settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token_expires = timedelta(days=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token, exp = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, exp=exp)
 
 
 # 根据token
