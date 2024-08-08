@@ -27,7 +27,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt, expire.strftime("%Y%m%d%H%M%S")
 
 
@@ -37,18 +39,29 @@ def make_token_for_login(user: Annotated[OAuth2PasswordRequestForm, Depends()]):
     access_token, exp = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, exp=exp)
+    user = {
+        "firstname": user.username,
+        "lastname": "",
+        "email": "admin@test.com",
+        "password": user.password,
+    }
+    return Token(access_token=access_token, exp=exp, user=user)
+    # return Token(access_token=access_token, user=user)
 
 
 # 根据token
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
+def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -62,7 +75,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session 
 
 
 def get_current_active_user(
-        current_user: Annotated[UserInDB, Depends(get_current_user)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
 ):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -70,7 +83,7 @@ def get_current_active_user(
 
 
 def get_current_manager_user(
-        current_user: Annotated[UserInDB, Depends(get_current_user)],
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
 ):
     if not current_user.is_manager:
         raise HTTPException(status_code=400, detail="Inactive user")
